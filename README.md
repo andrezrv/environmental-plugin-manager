@@ -18,7 +18,8 @@ Is in that kind of situations when the **Environmental Plugin Manager** can be a
 2. The `WP_ENV_PLUGINS` value is one of the following: `development`, `staging`, `production`.
 3. The value of `WP_ENV_PLUGINS` is different in each of your stages. Some developers prefer to keep different configuration files for each one of their environments, or change the values of their constants based on some evaluation. For example, you could hace something like this in your `wp-config.php` file:
 
-`if ( file_exists( dirname( __FILE__ ) . '/development-config.php' ) ) {
+```
+if ( file_exists( dirname( __FILE__ ) . '/development-config.php' ) ) {
 	define('WP_ENV_PLUGINS', 'development');
 }
 elseif ( file_exists( dirname( __FILE__ ) . '/staging-config.php' ) ) {
@@ -26,7 +27,8 @@ elseif ( file_exists( dirname( __FILE__ ) . '/staging-config.php' ) ) {
 }
 else {
 	define('WP_ENV_PLUGINS', 'production');
-}`
+}
+```
 
 **These assumptions are not going to change**, so you need to follow this practice in order to use this plugin correctly.
 
@@ -58,5 +60,4 @@ If you're using MultiSite, please note that you can activate and deactivate this
 
 ## Changelog
 
-#### 1.0 =
-First public release.
+**1.0:** First public release.
