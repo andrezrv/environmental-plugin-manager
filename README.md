@@ -16,7 +16,7 @@ Is in that kind of situations when the **Environmental Plugin Manager** can be a
 
 1. You have a constant named `WP_ENV_PLUGINS` defined in your WordPress configuration file (often `wp-config.php`).
 2. The `WP_ENV_PLUGINS` value is one of the following: `development`, `staging`, `production`.
-3. The value of `WP_ENV_PLUGINS` is different in each of your stages. Some developers prefer to keep different configuration files for each one of their environments, or change the values of their constants based on some evaluation. For example, you could hace something like this in your `wp-config.php` file:
+3. The value of `WP_ENV_PLUGINS` is different in each of your stages. Some developers prefer to keep different configuration files for each one of their environments, or change the values of their constants based on some evaluation. For example, you could have something like this in your `wp-config.php` file:
 
 ```
 if ( file_exists( dirname( __FILE__ ) . '/development-config.php' ) ) {
