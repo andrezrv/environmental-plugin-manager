@@ -4,7 +4,7 @@ This WordPress plugin gives you the option to define which plugins must be activ
 
 ## Description
 
-If you develop locally, in some point you'll have some plugins active in your local environment that you don't need anymore when you deploy your code and database to staging or production. Sure, you can deactivate them before or after deploying, but you're gonna need them again to be active if you want to perform changes to your code, or update your local database from your remote one. The whole process of activate and deactivate plugins for testing purposes could be really frustrating, and sometimes a complete waste of time.
+If you develop locally, at some point you'll have some plugins active in your local environment that you don't need anymore when you deploy your code and database to staging or production. Sure, you can deactivate them before or after deploying, but you're gonna need them again to be active if you want to perform changes to your code, or update your local database from your remote one. The whole process of activate and deactivate plugins for testing purposes could be really frustrating, and sometimes a complete waste of time.
 
 Is in that kind of situations when the **Environmental Plugin Manager** can be a really helpful friend. Sadly, due to the sentitive work that this plugin performs, it doesn't work right out of the box, so besides from installing this plugin, you need to do some additional work.
 
