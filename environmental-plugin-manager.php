@@ -195,7 +195,7 @@ function envpm_key_for_only() {
 function envpm_key_for_not_only() {
 
 	$key_for_not_only = 'not' . envpm_key_for_only();
-	return $key_for_only;
+	return $key_for_not_only;
 
 }
 
