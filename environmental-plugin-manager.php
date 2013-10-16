@@ -11,7 +11,7 @@ Plugin URI: http://wordpress.org/extend/plugins/environmental-plugin-manager/
 Description: Gives you the option to define which plugins must be active for a particular environment only. You can activate and deactivate plugins separatedly for development, staging and production environments. To use this plugin, you need to add a constant named <code>WP_ENV_PLUGINS</code> to your <code>wp-config.php</code> file, with one of the following values: <code>development</code>, <code>staging</code>, <code>production</code>. If you're using MultiSite, please note that you can activate and deactivate this plugin globally, but you cannot manage plugin environments for the whole network, just for individual sites. Also, this plugin cannot manage network activated plugins.
 Author: Andr&eacute;s Villarreal
 Author URI: https://github.com/andrezrv/
-Version: 1.0
+Version: 1.1
 */
 
 
@@ -20,10 +20,9 @@ Version: 1.0
  */
 function envpm_admin_warning() {
 
-	if ( !defined( 'WP_ENV_PLUGINS' ) ) {
+	if ( !envpm_environment_isset() ) {
 
-		$html = '<div class="error"><p><strong>'. __( 'Warning', 'envpm' ) .':</strong> ' . __( 'Plugins-By-Environment Manager is active, but you have not defined the <code>WP_ENV_PLUGINS</code> constant. Please do it so and assign to it one of the following values in order for Plugins-By-Environment Manager to work: <code>development</code>, <code>staging</code>, <code>production</code>.', 'envpm' ) . '</p></div>';
-	    
+		$html = '<div class="error"><p><strong>'. __( 'Warning', 'envpm' ) .':</strong> ' . __( 'Environmental Plugin Manager is active, but you have not defined the <code>WP_ENV_PLUGINS</code> constant. Please do it so and assign to it one of the following values in order for Environmental Plugin Manager to work: <code>development</code>, <code>staging</code>, <code>production</code>.', 'envpm' ) . '</p></div>';	    
 	    echo $html;
 
 	}
@@ -36,8 +35,7 @@ function envpm_admin_warning() {
  */
 function envpm_admin_success() {
 	
-	$html = '<div class="updated"><p>' . sprintf( __( 'The list of active plugins was updated to the %s environment.', 'envpm' ), WP_ENV_PLUGINS ). '</p></div>';
-	    
+	$html = '<div class="updated"><p>' . sprintf( __( 'The list of active plugins was updated to the %s environment.', 'envpm' ), envpm_current_environment() ). '</p></div>';	    
 	echo $html;
 
 }
@@ -50,26 +48,44 @@ function envpm_admin_success() {
  */
 function envpm_reset_button( $wp_admin_bar ) {
 
-	if ( current_user_can( 'activate_plugins' ) and defined( 'WP_ENV_PLUGINS' ) and !is_network_admin() ) {
+	if ( current_user_can( 'activate_plugins' ) and envpm_environment_is_valid() and !is_network_admin() ) {
 
-		$uri = $_SERVER['REQUEST_URI'];
-		$separator = '';
-		$key = '';
+		if ( envpm_has_auto_reset() ) {
 
-		if ( !stripos( $uri, 'reset_env_plugins' ) ) {
-			$separator = stripos( $uri, '?' ) ? '&' : '?';
-			$key = 'reset_env_plugins';
+			$args = array(
+				'id' => 'env-plugins-reset-button',
+				'title' => sprintf( __( 'Plugins Environment: %s. Auto-reset mode.', 'envpm' ), envpm_current_environment() ),
+				'href' => '',
+				'parent' => 'top-secondary',
+				'meta' => array(
+					'class' => 'env-plugins-auto-reset-mode'
+				)
+			);
+
 		}
-		
-		$args = array(
-			'id' => 'env-plugins-reset-button',
-			'title' => sprintf( __( 'Reset Plugins Environment (%s)', 'envpm' ), WP_ENV_PLUGINS ),
-			'href' => $uri . $separator . $key,
-			'parent' => 'top-secondary',
-			'meta' => array(
-				'class' => 'env-plugins-reset-button'
-			)
-		);
+		else {
+
+			$uri = $_SERVER['REQUEST_URI'];
+			$separator = '';
+			$key = '';
+
+			if ( !stripos( $uri, 'reset_env_plugins' ) ) {
+				$separator = stripos( $uri, '?' ) ? '&' : '?';
+				$key = 'reset_env_plugins';
+			}
+			
+			$args = array(
+				'id' => 'env-plugins-reset-button',
+				'title' => sprintf( __( 'Reset Plugins Environment (%s)', 'envpm' ), envpm_current_environment() ),
+				'href' => $uri . $separator . $key,
+				'parent' => 'top-secondary',
+				'meta' => array(
+					'class' => 'env-plugins-manual-mode'
+				)
+			);			
+			
+		}
+
 		
 		$wp_admin_bar->add_node($args);
 
@@ -82,19 +98,137 @@ function envpm_reset_button( $wp_admin_bar ) {
  * Sets up configuration for current environment.
  * Shows a notice if you are in an admin screen. 
  */
-function envpm_init() {
+function envpm_process_reset() {
 
-	if ( isset( $_GET['reset_env_plugins'] ) and defined( 'WP_ENV_PLUGINS' ) ) {
+	if ( ( isset( $_GET['reset_env_plugins'] ) or envpm_has_auto_reset() ) and envpm_environment_isset() ) {
 
-		if ( envpm_setup() ) {
+		if ( envpm_reset() ) {
 	
-			if ( is_admin() ) {
-				add_action( 'admin_notices', 'envpm_admin_success' );				
+			if ( is_admin() and !envpm_has_auto_reset() ) {
+				add_action( 'admin_notices', 'envpm_admin_success' );
 			}
-	
+		
 		}
 
 	}
+
+}
+
+
+/**
+ * Accepted values for WP_ENV_PLUGINS constant.
+ */
+function envpm_accepted_environment_values() {
+
+	$accepted_values = array( 'development', 'staging', 'production' );
+	return $accepted_values;
+
+}
+
+
+/**
+ * Shortnames for each environment.
+ */
+function envpm_environment_shortnames() {
+
+	$accepted_values = envpm_accepted_environment_values();
+	$shortnames = array( $accepted_values[0] => 'dev', $accepted_values[1] => 'stage', $accepted_values[2] => 'prod' );
+
+	return $shortnames;
+
+}
+
+
+/**
+ * Obtains the shortname for a given environment.
+ */
+function envpm_get_environment_shortname( $environment ) {
+
+	$shortnames = envpm_environment_shortnames();
+
+	if ( isset( $shortnames[$environment] ) ) {
+		return $shortnames[$environment];
+	}
+
+	return false;
+
+}
+
+
+/**
+ * Returns the name of the current environment.
+ */
+function envpm_current_environment() {
+
+	if ( envpm_environment_isset() ) {
+		return WP_ENV_PLUGINS;
+	}
+
+}
+
+
+/**
+ * Checks if the environment is set.
+ */
+function envpm_environment_isset() {
+
+	$isset = defined( 'WP_ENV_PLUGINS' );
+	return $isset;
+
+}
+
+
+/**
+ * Returns request key for current-environment-only option. 
+ */
+function envpm_key_for_only() {
+
+	$key_for_only = envpm_get_environment_shortname( envpm_current_environment() ) . '_only';
+	return $key_for_only;
+
+}
+
+
+/**
+ * Returns request key for non-current-environment-only option. 
+ */
+function envpm_key_for_not_only() {
+
+	$key_for_not_only = 'not' . envpm_key_for_only();
+	return $key_for_only;
+
+}
+
+
+/**
+ * Returns wp_option name for current-environment-only list of plugins.
+ */
+function envpm_option_key() {
+
+	$option_key = envpm_option_key_with_environment( envpm_current_environment() );
+	return $option_key;
+
+}
+
+
+/**
+ * Returns wp_option name for given-environment-only list of plugins.
+ */
+function envpm_option_key_with_environment( $environment ) {
+
+	$option_key = 'envpm_' . envpm_get_environment_shortname( $environment );
+	return $option_key;
+
+}
+
+
+/**
+ * Checks if the current environment is a valid one.
+ */
+function envpm_environment_is_valid() {
+
+	$valid = ( in_array( envpm_current_environment(), envpm_accepted_environment_values() ) );
+	return $valid;
 
 }
 
@@ -105,51 +239,13 @@ function envpm_init() {
  */
 function envpm_process_request() {
 
-	if ( isset( $_REQUEST ) ) {
+	if ( envpm_environment_is_valid() ) {
 
-		if ( defined( 'WP_ENV_PLUGINS' ) ) {
-
-			switch ( WP_ENV_PLUGINS ) {
-
-				case 'development':
-
-					if ( isset( $_REQUEST['dev_only'] ) and $_REQUEST['dev_only'] ) {
-						envpm_add( 'envpm_dev', $_REQUEST['dev_only'] );
-					}
-					elseif ( isset( $_REQUEST['not_dev_only'] ) and $_REQUEST['not_dev_only'] ) {
-						envpm_delete( 'envpm_dev', $_REQUEST['not_dev_only'] );
-					}
-
-					break;
-
-				case 'staging':
-
-					if ( isset( $_REQUEST['stage_only'] ) and $_REQUEST['stage_only'] ) {
-						envpm_add( 'envpm_stage', $_REQUEST['stage_only'] );
-					}
-					elseif ( isset( $_REQUEST['not_stage_only'] ) and $_REQUEST['not_stage_only'] ) {
-						envpm_delete( 'envpm_stage', $_REQUEST['not_stage_only'] );
-					}
-
-					break;
-
-				case 'production':
-					
-					if ( isset( $_REQUEST['prod_only'] ) and $_REQUEST['prod_only'] ) {
-						envpm_add( 'envpm_prod', $_REQUEST['prod_only'] );
-					}
-					elseif ( isset( $_REQUEST['not_prod_only'] ) and $_REQUEST['not_prod_only'] ) {
-						envpm_delete( 'envpm_prod', $_REQUEST['not_prod_only'] );
-					}
-
-					break;
-				
-				default:
-
-					break;
-			
-			}
-
+		if ( !empty( $_REQUEST[ envpm_key_for_only() ] ) ) {
+			envpm_add( envpm_option_key(), $_REQUEST[ envpm_key_for_only() ] );
+		}
+		elseif ( !empty( $_REQUEST[ envpm_key_for_not_only() ] ) ) {
+			envpm_delete( envpm_option_key(), $_REQUEST[ envpm_key_for_not_only() ] );
 		}
 
 	}
@@ -202,66 +298,21 @@ function envpm_action_link( $links, $plugin ) {
  */
 function envpm_make_link( $plugin ) {
 
-	if ( defined( 'WP_ENV_PLUGINS' ) ) {
+	if ( envpm_environment_is_valid() ) {
 
-		switch ( WP_ENV_PLUGINS ) {
+		$current_environment = envpm_current_environment();
 
-			case 'development':
-
-				if ( in_array( $plugin, envpm_get( 'envpm_dev' ) ) ) {
-					$key = 'not_dev_only';
-					$message = __( 'No more development only', 'envpm' );
-				}
-				else {
-					$key = 'dev_only';
-					$message = __( 'Use for development only', 'envpm' );
-				}
-
-				$link = envpm_process_link( $plugin, $key, $message );
-
-				return $link;
-
-				break;
-
-			case 'staging':
-				
-				if ( in_array( $plugin, envpm_get( 'envpm_stage' ) ) ) {
-					$key = 'not_stage_only';
-					$message = __( 'No more staging only', 'envpm' );
-				}
-				else {
-					$key = 'stage_only';
-					$message = __( 'Use for staging only', 'envpm' );
-				}
-
-				$link = envpm_process_link( $plugin, $key, $message );
-
-				return $link;
-
-				break;
-
-			case 'production':
-				
-				if ( in_array( $plugin, envpm_get( 'envpm_prod' ) ) ) {
-					$key = 'not_prod_only';
-					$message = __( 'No more production only', 'envpm' );
-				}
-				else {
-					$key = 'prod_only';
-					$message = __( 'Use for production only', 'envpm' );
-				}
-
-				$link = envpm_process_link( $plugin, $key, $message );
-
-				return $link;
-
-				break;
-
-			default:
-
-				break;
-
+		if ( in_array( $plugin, envpm_get( envpm_option_key() ) ) ) {
+			$key = envpm_key_for_not_only();
+			$message = sprintf( __( 'No more %s only', 'envpm' ), $current_environment );
 		}
+		else {
+			$key = envpm_key_for_only();
+			$message = sprintf( __( 'Use for %s only', 'envpm' ), $current_environment );
+		}
+
+		$link = envpm_process_link( $plugin, $key, $message );
+		return $link;
 
 	}
 
@@ -280,41 +331,63 @@ function envpm_make_link( $plugin ) {
 function envpm_process_link( $plugin, $key, $message ) {
 
 	$link = '<a id="' . sanitize_title( $plugin ) . '" href="' . get_bloginfo( 'wpurl' ) . '/wp-admin/plugins.php?' . $key . '=' . plugin_basename( $plugin ) . '">' . $message . '</a>';
-
 	return $link;
 
 }
 
 
 /**
- * Obtains values for the current environment and calls envpm_reset().
+ * Returns list of plugins for the current environment only.
  */
-function envpm_setup() {
+function envpm_environment_only_plugins() {
 
-	// Obtain values by current environment.
-	if ( ( 'development' == WP_ENV_PLUGINS ) ) {
+	$env_plugins = envpm_get( envpm_option_key() );
+	return $env_plugins;
 
-		$environment = 'development';
-		$env_plugins = envpm_get( 'envpm_dev' );
-		$non_env_plugins = ( $flag_value == 'production' ) ? envpm_get( 'envpm_prod' ) : envpm_get( 'envpm_stage' );
-		
+}
+
+
+/**
+ * Returns list of plugins that should not be active in the current environment.
+ */
+function envpm_non_environment_only_plugins() {
+
+	$accepted_values = envpm_accepted_environment_values();
+	$non_environment_only_plugins = array();
+
+	foreach ( $accepted_values as $accepted_value ) {
+
+		if ( $accepted_value != envpm_current_environment() ) {
+
+			$plugins = envpm_get( envpm_option_key_with_environment( $accepted_value ) );
+
+			if ( is_array( $plugins )  and !empty( $plugins ) ) {
+
+				foreach ( $plugins as $plugin ) {
+					$non_environment_only_plugins[] = $plugin;
+				}
+
+			}
+
+		}
+
 	}
-	elseif ( ( 'staging' == WP_ENV_PLUGINS ) ) {
 
-		$environment = 'staging';
-		$env_plugins = envpm_get( 'envpm_stage' );
-		$non_env_plugins = ( $flag_value == 'production' ) ? envpm_get( 'envpm_prod' ) : envpm_get( 'envpm_dev' );
-		
+	return $non_environment_only_plugins;
+
+}
+
+
+/**
+ * Obtains values for the current environment and calls envpm_do_reset().
+ */
+function envpm_reset() {
+
+	if ( envpm_environment_is_valid() ) {
+		return envpm_do_reset( envpm_current_environment(), envpm_get( envpm_option_key() ), envpm_non_environment_only_plugins() );
 	}
-	elseif ( ( 'production' == WP_ENV_PLUGINS ) ) {
 
-		$environment = 'production';
-		$env_plugins = envpm_get( 'envpm_prod' );
-		$non_env_plugins = ( $flag_value == 'staging' ) ? envpm_get( 'envpm_stage' ) : envpm_get( 'envpm_dev' );
-		
-	}
-
-	return envpm_reset( $environment, $env_plugins, $non_env_plugins );
+	return false;
 
 }
 
@@ -326,7 +399,7 @@ function envpm_setup() {
  * @param array $env_plugins The list of plugins to activate.
  * @param array $non_env_plugins The list of plugins to deactivate.
  */
-function envpm_reset( $environment, $env_plugins, $non_env_plugins ) {
+function envpm_do_reset( $environment, $env_plugins, $non_env_plugins ) {
 
 	include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 
@@ -441,13 +514,7 @@ function envpm_add_script() {
 					var key = href.split(\'?\')[1].split(\'=\')[0];
 					var value = href.split(\'?\')[1].split(\'=\')[1];
 
-					var data = {
-						action: \'envpm_process_ajax\',
-						href: href,
-						id: id,
-						key: key,
-						value: value
-					}
+					var data = { action: \'envpm_process_ajax\', href: href, id: id, key: key, value: value }
 
 					jQuery.post( ajaxurl, data, function( response ) {
 						jQuery( link ).replaceWith( response );
@@ -483,11 +550,41 @@ function envpm_process_ajax() {
 }
 
 
+/**
+ * Checks if this plugin is a must-use.
+ */
+function envpm_is_mu_plugin() {
+
+	include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+	
+	$mu_plugins = get_mu_plugins();
+
+	return !empty( $mu_plugins[ basename( __FILE__ ) ] );
+
+}
+
+
+/**
+ * Check if environments can be reset automatically.
+ */
+function envpm_has_auto_reset() {
+
+	return ( defined( 'WP_ENV_PLUGINS_AUTO_RESET' ) and WP_ENV_PLUGINS_AUTO_RESET );
+
+}
+
+
 // Let's fire all this shit \m/
 add_action( 'admin_notices', 'envpm_admin_warning' );
 add_action( 'admin_bar_menu', 'envpm_reset_button', 50 );
-add_action( 'plugins_loaded', 'envpm_init' );
 add_action( 'plugins_loaded', 'envpm_process_request' );
 add_action( 'plugins_loaded', 'envpm_add_links' );
 add_action( 'admin_footer', 'envpm_add_script' );
 add_action( 'wp_ajax_envpm_process_ajax', 'envpm_process_ajax' );
+
+if ( envpm_has_auto_reset() ) {
+	envpm_process_reset();
+}
+else {
+	add_action( 'plugins_loaded', 'envpm_process_reset' );
+}

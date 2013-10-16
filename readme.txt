@@ -3,7 +3,7 @@ Contributors: andrezrv
 Tags: plugin, plugins, testing, staging, production, development, local, environment
 Requires at least: 3.0
 Tested up to: 3.6.1
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,8 @@ else {
 	define('WP_ENV_PLUGINS', 'production');
 }`
 
+If you follow this example, note that `development-config.php` should not be included in your deployments to staging and production, and both `development-config.php` and `staging-config.php` should not exist in your production environment.
+
 **These assumptions are not going to change**, so you need to follow this practice in order to use this plugin correctly.
 
 = How do I set up my environment? =
@@ -52,9 +54,15 @@ Once you performed a complete deploy (files and database) to a different environ
 
 That's pretty much it. You can test it yourself before deploying by just changing the values of `WP_ENV_PLUGINS`.
 
+= Auto-reset mode =
+
+If you prefer your environments to be reset automatically, without clicking any button, you can add a second constant to your configuration file, called `WP_ENV_PLUGINS_AUTO_RESET`, which should be set to `true`. If you use this method, you won't see the reset button in the admin bar anymore (instead, it will be replaced by an environment indicator), but keep in mind that the reset process will run every time a page of your site is loaded. It shouldn't take a lot of resources, though.
+
+If you use the auto-reset process, using this plugin as a [must-use](http://codex.wordpress.org/Must_Use_Plugins) will be a lot more effective.
+
 = Will this plugin work on MultiSite installations? =
 
-If you're using MultiSite, please note that you can activate and deactivate this plugin globally, but you cannot manage plugin environments for the whole network, just for individual sites. Also, this plugin cannot manage network activated plugins.
+If you're using MultiSite, please note that you can activate and deactivate this plugin globally, but you cannot manage plugin environments for the whole network, just for individual sites. Also, this plugin cannot manage network activated plugins. This is in the to-do list, though.
 
 = Contribute =
 
@@ -67,6 +75,10 @@ You can make suggestions and submit your own modifications to this plugin on [Gi
 3. Read carefully the instructions in [description page](http://wordpress.org/extend/plugins/environmental-plugin-manager/).
 
 == Changelog ==
+
+= 1.1 =
+* Improvement: auto reset mode.
+* Bugfix: correctly return the list of non-current-environment-only plugins.
 
 = 1.0 =
 First public release.
