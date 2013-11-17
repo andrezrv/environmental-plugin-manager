@@ -2,8 +2,8 @@
 Contributors: andrezrv
 Tags: plugin, plugins, testing, staging, production, development, local, environment
 Requires at least: 3.0
-Tested up to: 3.6.1
-Stable tag: 1.1
+Tested up to: 3.7.1
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,10 @@ You can make suggestions and submit your own modifications to this plugin on [Gi
 3. Read carefully the instructions in [description page](http://wordpress.org/extend/plugins/environmental-plugin-manager/).
 
 == Changelog ==
+
+= 1.1.1 =
+* Tested up to WordPress 3.7.1.
+* Improvement: simplify generated javascript
 
 = 1.1 =
 * Improvement: auto reset mode.

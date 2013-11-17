@@ -68,6 +68,10 @@ If you're using MultiSite, please note that you can activate and deactivate this
 
 ## Changelog
 
+#### 1.1.1
+* Tested up to WordPress 3.7.1.
+* Improvement: simplify generated javascript
+
 #### 1.1
 * Improvement: auto reset mode.
 * Bugfix: correctly return the list of non-current-environment-only plugin.

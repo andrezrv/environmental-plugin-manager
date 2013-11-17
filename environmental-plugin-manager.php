@@ -11,7 +11,7 @@ Plugin URI: http://wordpress.org/extend/plugins/environmental-plugin-manager/
 Description: Gives you the option to define which plugins must be active for a particular environment only. You can activate and deactivate plugins separatedly for development, staging and production environments. To use this plugin, you need to add a constant named <code>WP_ENV_PLUGINS</code> to your <code>wp-config.php</code> file, with one of the following values: <code>development</code>, <code>staging</code>, <code>production</code>. If you're using MultiSite, please note that you can activate and deactivate this plugin globally, but you cannot manage plugin environments for the whole network, just for individual sites. Also, this plugin cannot manage network activated plugins.
 Author: Andr&eacute;s Villarreal
 Author URI: https://github.com/andrezrv/
-Version: 1.1
+Version: 1.1.1
 */
 
 
@@ -330,7 +330,7 @@ function envpm_make_link( $plugin ) {
  */
 function envpm_process_link( $plugin, $key, $message ) {
 
-	$link = '<a id="' . sanitize_title( $plugin ) . '" href="' . get_bloginfo( 'wpurl' ) . '/wp-admin/plugins.php?' . $key . '=' . plugin_basename( $plugin ) . '">' . $message . '</a>';
+	$link = '<a id="' . sanitize_title( $plugin ) . '" class="envpm-link" href="' . get_bloginfo( 'wpurl' ) . '/wp-admin/plugins.php?' . $key . '=' . plugin_basename( $plugin ) . '">' . $message . '</a>';
 	return $link;
 
 }
@@ -501,29 +501,18 @@ function envpm_add_script() {
 	if ( $current_screen->parent_base == 'plugins' ) {
 
 		echo '<script type="text/javascript">
-
-			jQuery( document ).ready( function() {
-
-				jQuery(\'.row-actions-visible .0 a\').click( function( event ) {
-					
+				jQuery(\'#wpbody\').on( \'click\', \'a.envpm-link\', function( event ) {					
 					event.preventDefault();
-
 					var link = this;
 					var href = jQuery( link ).attr(\'href\');
 					var id = jQuery( link ).attr(\'id\');
 					var key = href.split(\'?\')[1].split(\'=\')[0];
 					var value = href.split(\'?\')[1].split(\'=\')[1];
-
 					var data = { action: \'envpm_process_ajax\', href: href, id: id, key: key, value: value }
-
 					jQuery.post( ajaxurl, data, function( response ) {
 						jQuery( link ).replaceWith( response );
 					});
-
 				} );
-				
-			} );
-
 		</script>';
 
 	}
