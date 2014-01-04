@@ -3,7 +3,7 @@ Contributors: andrezrv
 Tags: plugin, plugins, testing, staging, production, development, local, environment
 Requires at least: 3.0
 Tested up to: 3.7.1
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,9 +76,13 @@ You can make suggestions and submit your own modifications to this plugin on [Gi
 
 == Changelog ==
 
+= 1.1.2 =
+* Tested up to WordPress 3.8
+* Improvement: avoid PHP warning by removing uninstalled plugins from list of environment-only plugins.
+
 = 1.1.1 =
 * Tested up to WordPress 3.7.1.
-* Improvement: simplify generated javascript
+* Improvement: simplify generated javascript.
 
 = 1.1 =
 * Improvement: auto reset mode.

@@ -2,7 +2,7 @@
 
 /**
  * @package Env_Plugin_Manager
- * @version 1.0
+ * @version 1.1.2
  */
 
 /*
@@ -11,7 +11,7 @@ Plugin URI: http://wordpress.org/extend/plugins/environmental-plugin-manager/
 Description: Gives you the option to define which plugins must be active for a particular environment only. You can activate and deactivate plugins separatedly for development, staging and production environments. To use this plugin, you need to add a constant named <code>WP_ENV_PLUGINS</code> to your <code>wp-config.php</code> file, with one of the following values: <code>development</code>, <code>staging</code>, <code>production</code>. If you're using MultiSite, please note that you can activate and deactivate this plugin globally, but you cannot manage plugin environments for the whole network, just for individual sites. Also, this plugin cannot manage network activated plugins.
 Author: Andr&eacute;s Villarreal
 Author URI: https://github.com/andrezrv/
-Version: 1.1.1
+Version: 1.1.2
 */
 
 
@@ -429,7 +429,32 @@ function envpm_get( $option ) {
 		$plugins = get_option( $option );
 	}
 
+	$plugins = envpm_clean( $plugins, $option );
+
 	return $plugins;
+
+}
+
+
+/**
+ * Cleans the list of plugins for a given environment, checking for non-existent files.
+ * 
+ * @param  array	$plugins	An array containing relative paths to plugins from the plugin directory.
+ * @param  string	$option 	The name of the wp_option that stores the list of plugins for an environment.
+ */
+function envpm_clean( $plugins, $option ) {
+
+	$clean_plugins = array();
+
+	foreach( $plugins as $plugin ) {
+		if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin ) ) {
+			$clean_plugins[] = $plugin;
+		} 
+	}
+
+	update_option( $option, $clean_plugins );
+
+	return $clean_plugins;
 
 }
 
