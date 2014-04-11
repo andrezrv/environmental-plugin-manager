@@ -1,5 +1,7 @@
 # Environmental Plugin Manager
 
+**VERY IMPORTANT:** This plugin is deprecated and will not be mantained anymore. Please consider using [Stage WP Plugin Manager](http://github.com/andrezrv/stage-wp-plugin-manager/) instead.
+
 This WordPress plugin gives you the option to define which plugins must be active for a particular environment only. You can activate and deactivate plugins separatedly for development, staging and production environments.
 
 ## Description
